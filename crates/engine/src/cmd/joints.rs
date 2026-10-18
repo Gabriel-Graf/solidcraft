@@ -17,10 +17,10 @@ use crate::{EngineError, Result, Session};
 
 pub static COMMANDS: &[CommandSpec] = &[
     CommandSpec::new("joint.origin", "Joint Origin", joint_origin).at("SOLID", "CREATE").icon("joint_origin").params(
-        "name?, occurrence?: id|name (default: from the pick), face: [x,y,z] (centre of a planar face) | circle: [x,y,z] (centre of a round end) | point: [x,y,z], z?: [x,y,z]",
+        "name?, occurrence?: id|name (default: from the pick), face: [x,y,z] (centre of a planar face) | circle: [x,y,z] (centre of a round end) | point: [x,y,z], z?: [x,y,z], x?: [x,y,z] (the frame's x, laid square to z; default: chosen from z alone)",
     ),
     CommandSpec::new("joint.create", "Joint", joint).at("SOLID", "ASSEMBLE").icon("joint").key("J").params(
-        "type: rigid|revolute|slider|cylindrical|pin_slot|planar|ball; a, b: joint origins ({occurrence, face|circle|point: [x,y,z] in world} | origin name); \
+        "type: rigid|revolute|slider|cylindrical|pin_slot|planar|ball; a, b: joint origins ({occurrence, face|circle|point: [x,y,z] in world, z?, x? for a point as joint.origin} | origin name); \
          values?: [angles in deg or expressions, distances]; limits?: [[min, max] | null…]; flip?: bool (default false: the origins are mated, \
          b's z against a's as two faces meet; true: b's z along a's, so two origins given at one point with the same z stay as they are); \
          offset?; angle?; name?; quiet?: bool (leave out dof and fixed)",
@@ -302,7 +302,17 @@ fn origin_param(s: &Session, v: Option<&Value>, cmd: &str) -> Result<JointOrigin
             let face = solidcraft_doc::naming::face_names_at(&s.model.state(), &[named_at]).into_iter().next().filter(|n| !n.is_empty());
             if what == "face" { Snap::FaceCenter { pick, face } } else { Snap::CircleCenter { pick, face } }
         }
-        "point" => Snap::Point { point: local(world), z: v.get("z").and_then(vec3).map(local_dir) },
+        "point" => {
+            let z = v.get("z").and_then(vec3).map(local_dir);
+            let x = v.get("x").and_then(vec3).map(local_dir);
+            // An x along z (or no direction at all) would leave the frame's turn to chance.
+            if let Some(x) = x
+                && (!x.is_finite() || x.cross(z.unwrap_or(Vec3::Z)).len() <= 1e-9 * x.len().max(1.0))
+            {
+                return Err(bad(cmd, "a point origin's `x` must be a direction off its z axis"));
+            }
+            Snap::Point { point: local(world), z, x }
+        }
         _ => {
             let f = v.get("frame").cloned().unwrap_or_default();
             let z = f.get("z").and_then(vec3).ok_or_else(|| bad(cmd, "`frame` needs a z axis"))?;
@@ -332,7 +342,7 @@ fn circle_centre(s: &Session, occurrence: u64, pick: Vec3) -> Option<Snap> {
         .find_map(|b| solidcraft_doc::kernel::cylinder_end_at(&b.body, pick))?;
     let along = (pick - c.axis_point).dot(c.axis);
     let (at, dir) = if (along - c.start).abs() <= (c.end - along).abs() { (c.start, -1.0) } else { (c.end, 1.0) };
-    Some(Snap::Point { point: c.axis_point + c.axis * at, z: Some(c.axis * dir) })
+    Some(Snap::Point { point: c.axis_point + c.axis * at, z: Some(c.axis * dir), x: None })
 }
 
 pub(crate) fn joint_id(s: &Session, v: Option<&Value>, cmd: &str) -> Result<u64> {
@@ -1230,6 +1240,9 @@ pub(crate) fn overlapping_pairs(boxes: &[Aabb3], limit: usize) -> (Vec<(usize, u
     (pairs, skipped)
 }
 
+#[cfg(test)]
+#[path = "joints_point_x_tests.rs"]
+mod point_x_tests;
 #[cfg(test)]
 #[path = "joints_reach_tests.rs"]
 mod reach_tests;

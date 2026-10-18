@@ -29,7 +29,7 @@ fn finite_origin(origin: &JointOrigin) -> Result<()> {
     let finite = match &origin.snap {
         Snap::Frame { origin, z, x } => origin.is_finite() && z.is_finite() && x.is_none_or(|x| x.is_finite()),
         Snap::FaceCenter { pick, .. } | Snap::CircleCenter { pick, .. } => pick.is_finite(),
-        Snap::Point { point, z } => point.is_finite() && z.is_none_or(|z| z.is_finite()),
+        Snap::Point { point, z, x } => point.is_finite() && z.is_none_or(|z| z.is_finite()) && x.is_none_or(|x| x.is_finite()),
     };
     if !finite {
         return Err(invalid("joint origin contains non-finite geometry"));

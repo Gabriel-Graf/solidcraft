@@ -59,7 +59,7 @@ fn circle_given_by_its_centre_takes_that_round_end() {
     run(&mut s, "joint.origin", json!({"occurrence": "Knob", "circle": [0, 0, 16], "name": "Top"}));
     let top = s.doc.assembly.origins.iter().find(|o| o.name == "Top").map(|o| o.origin.snap.clone());
     assert!(
-        matches!(top, Some(solidcraft_doc::joints::Snap::Point { point, z: Some(z) }) if near(point, Vec3::new(0.0, 0.0, 16.0)) && near(z, Vec3::Z)),
+        matches!(top, Some(solidcraft_doc::joints::Snap::Point { point, z: Some(z), .. }) if near(point, Vec3::new(0.0, 0.0, 16.0)) && near(z, Vec3::Z)),
         "{top:?}"
     );
     // Off the axis is still refused, and so is a coupling size (it follows a face).

@@ -49,11 +49,14 @@ pub enum Snap {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         face: Option<String>,
     },
-    /// A point, z along `z` (default +Z).
+    /// A point, z along `z` (default +Z) and x toward `x` laid square to z (default: one chosen
+    /// from z alone).
     Point {
         point: Vec3,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         z: Option<Vec3>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        x: Option<Vec3>,
     },
 }
 
@@ -401,7 +404,7 @@ pub fn resolve_origin(doc: &Document, st: &ModelState, o: &JointOrigin) -> Resul
     let bad = || DocError::Invalid("joint origin: degenerate frame".into());
     match &o.snap {
         Snap::Frame { origin, z, x } => frame(*origin, *z, *x).ok_or_else(bad),
-        Snap::Point { point, z } => frame(*point, z.unwrap_or(Vec3::Z), None).ok_or_else(bad),
+        Snap::Point { point, z, x } => frame(*point, z.unwrap_or(Vec3::Z), *x).ok_or_else(bad),
         Snap::FaceCenter { pick, face } => {
             let pick = &named_pick(st, *pick, face.as_deref())?;
             let comp = component_of(doc, o.occurrence)?;
@@ -1453,7 +1456,7 @@ mod tests {
     /// Revolute joints 1…n (joint 1 at `start`, the others at 0) linked 1 → 2 → … → n with
     /// ratio 2, the links stored from the end of the chain; joint 3 limited to ±50.
     fn chain(n: u64, start: f64) -> Assembly {
-        let origin = JointOrigin { occurrence: 0, snap: Snap::Point { point: Vec3::ZERO, z: None } };
+        let origin = JointOrigin { occurrence: 0, snap: Snap::Point { point: Vec3::ZERO, z: None, x: None } };
         let joints = (1..=n)
             .map(|id| Joint {
                 id,
