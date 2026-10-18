@@ -13,7 +13,7 @@ pub static COMMANDS: &[CommandSpec] = &[
     CommandSpec::new("parameters.change", "Change Parameters", change_param).at("SOLID", "MODIFY").icon("params").params(
         "name, expression (number or text), unit?: mm|cm|m|in|ft|deg|rad|\"\" (new parameters default to their value's unit), comment?, \
              favorite?: bool, new_name?: rename (references follow); or delete: name; or changes: {name: expression, …} (existing \
-         parameters, checked together and rebuilt once, all or nothing) → recomputed: features rebuilt, \
+         parameters, checked together and rebuilt once, all or nothing) → changed?: {name: value} (with changes), recomputed: features rebuilt, \
          restored: features whose earlier result for the same inputs was reused (e.g. a value set back)",
     ),
     CommandSpec::new("parameters.list", "List Parameters", list).icon("list").noundo().doc_only().params(
