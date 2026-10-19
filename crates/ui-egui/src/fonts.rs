@@ -9,6 +9,15 @@
 
 use std::sync::Arc;
 
+// Arrows for small buttons and key hints (#2955). ▲ ▼ ↑ ↓ are in none of egui's built-in faces
+// and show as empty boxes where no system font fills in; these are in its emoji-icon-font.
+/// Up: move up, move earlier.
+pub const ARROW_UP: &str = "⏶";
+/// Down: move down, move later, an expanded section.
+pub const ARROW_DOWN: &str = "⏷";
+/// Right: a collapsed section.
+pub const ARROW_RIGHT: &str = "⏵";
+
 /// Name of the CJK fallback entry in [`egui::FontDefinitions`].
 pub const CJK_FALLBACK: &str = "cjk_fallback";
 
@@ -615,6 +624,25 @@ pub fn setup_fonts(_ctx: &egui::Context) {}
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The arrows draw with egui's built-in faces alone, so also on the web and wherever no
+    /// system font fills in (#2955). Checked in the font data: `Fonts::has_glyph` misses a glyph
+    /// in the face that also gives the replacement glyph.
+    #[test]
+    fn the_arrows_are_in_the_built_in_faces() {
+        let defaults = egui::FontDefinitions::default();
+        let faces: Vec<ttf_parser::Face<'_>> = defaults.families[&egui::FontFamily::Proportional]
+            .iter()
+            .filter_map(|name| defaults.font_data.get(name))
+            .map(|data| ttf_parser::Face::parse(&data.font, data.index).unwrap())
+            .collect();
+        assert!(!faces.is_empty());
+        for arrow in [ARROW_UP, ARROW_DOWN, ARROW_RIGHT] {
+            for c in arrow.chars() {
+                assert!(faces.iter().any(|f| f.glyph_index(c).is_some()), "{c:?} (U+{:04X}) is in a built-in face", c as u32);
+            }
+        }
+    }
 
     #[test]
     fn the_interface_font_comes_first_and_keeps_the_fallbacks() {

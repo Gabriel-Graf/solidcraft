@@ -74,11 +74,15 @@ pub(super) fn show(ui: &mut Ui, app: &mut SolveApp, error: &mut Option<String>, 
                 if ui.small_button("Edit").clicked() {
                     editor.rule = rule.clone();
                 }
-                if ui.add_enabled(index > 0, egui::Button::new("↑").small()).on_hover_text(crate::i18n::tr_label("Move earlier")).clicked() {
+                if ui
+                    .add_enabled(index > 0, egui::Button::new(crate::fonts::ARROW_UP).small())
+                    .on_hover_text(crate::i18n::tr_label("Move earlier"))
+                    .clicked()
+                {
                     *error = app.run("config.rule", json!({"id":rule.id,"index":index-1})).err();
                 }
                 if ui
-                    .add_enabled(index + 1 < rules.len(), egui::Button::new("↓").small())
+                    .add_enabled(index + 1 < rules.len(), egui::Button::new(crate::fonts::ARROW_DOWN).small())
                     .on_hover_text(crate::i18n::tr_label("Move later"))
                     .clicked()
                 {

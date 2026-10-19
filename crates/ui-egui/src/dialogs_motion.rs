@@ -1203,7 +1203,7 @@ mod tests {
         ])).unwrap();
         assert!(h.widget("length = 20 mm").is_some());
         assert_eq!(h.app.session.doc.param("length").unwrap().expr, "40 mm");
-        click_rule_button(&mut h, "↑");
+        click_rule_button(&mut h, crate::fonts::ARROW_UP);
         h.step(&json!({"widget":"Preview Row"})).unwrap();
         assert_eq!(h.app.session.doc.configs.rules[0].id, "last");
         assert!(h.widget("length = 10 mm").is_some());

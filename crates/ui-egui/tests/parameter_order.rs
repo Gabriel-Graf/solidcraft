@@ -1,4 +1,4 @@
-//! The Parameters dialog's ▲ / ▼ buttons reorder user parameters (#1187).
+//! The Parameters dialog's move up / move down buttons reorder user parameters (#1187).
 use serde_json::json;
 use solidcraft_ui_egui::scenario::Harness;
 
