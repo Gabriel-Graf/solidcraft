@@ -108,3 +108,24 @@ fn a_point_expression_that_cannot_be_worked_out_is_refused() {
     }
     assert_eq!(s.doc.sketch(s.doc.find_feature("S").unwrap().id).unwrap().points.len(), 1, "only the origin");
 }
+
+#[test]
+fn a_point_its_parameters_put_out_of_range_is_an_error_not_a_crash() {
+    let mut s = Session::default();
+    run(&mut s, "parameters.add", json!({"name": "W", "expression": "40 mm"}));
+    run(&mut s, "sketch.create", json!({"plane": "XY", "name": "S"}));
+    run(&mut s, "sketch.point", json!({"point": ["W", 0], "id": "c"}));
+    run(&mut s, "sketch.finish", json!({}));
+    let changed = s.execute("parameters.change", &json!({"name": "W", "expression": "1e12 mm"}));
+    let failed = s.model.results.iter().any(|r| r.error.as_deref().is_some_and(|e| e.contains("out of range")));
+    assert!(changed.is_err() || failed, "{changed:?}");
+    run(&mut s, "parameters.change", json!({"name": "W", "expression": "50 mm"}));
+    no_trouble(&s);
+    assert_eq!(solved(&s, "c"), Vec2::new(50.0, 0.0));
+    // A design file whose point expression cannot be worked out opens with that sketch in error.
+    let file = s.doc.to_json();
+    let hostile = file.replace("\"x\": \"W\"", "\"x\": \"W * 1e300 * 1e300\"").replace("\"x\":\"W\"", "\"x\":\"W * 1e300 * 1e300\"");
+    assert_ne!(hostile, file, "the point's expression is in the file");
+    let r = Session::new(solidcraft_doc::Document::from_json(&hostile).unwrap());
+    assert!(r.model.results.iter().any(|r| r.error.is_some()), "the sketch reports the bad point");
+}

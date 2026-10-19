@@ -59,8 +59,8 @@ pub struct SPoint {
     pub exprs: Option<Box<PointExprs>>,
 }
 
-/// The expressions of a point placed by parameters (mm; a coordinate without one is the
-/// number stored in the point).
+/// The expressions of a point placed by parameters, over the design's parameters; a coordinate
+/// without one keeps the number stored in the point (mm).
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct PointExprs {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -75,6 +75,7 @@ impl PointExprs {
         [("Point X", &self.x), ("Point Y", &self.y)].into_iter().filter_map(|(what, e)| e.as_ref().map(|e| (what, e))).collect()
     }
 
+    /// Mutable view of [`PointExprs::list`], for renaming the parameters they refer to.
     pub fn list_mut(&mut self) -> Vec<&mut String> {
         [&mut self.x, &mut self.y].into_iter().filter_map(Option::as_mut).collect()
     }
