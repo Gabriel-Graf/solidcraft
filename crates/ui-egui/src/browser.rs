@@ -543,7 +543,7 @@ fn browser_panel(app: &mut SolveApp, ui: &mut egui::Ui, timeline_above: bool) {
                     ui.painter().hline(rect.x_range(), rect.center().y, egui::Stroke::new(1.0, t.border));
                     crate::scenario::publish_handle("left-history-divider", rect.center());
                 }
-                let arrow = if browser_collapsed { crate::fonts::ARROW_RIGHT } else { crate::fonts::ARROW_DOWN };
+                let arrow = if browser_collapsed { "▶" } else { "▼" };
                 let response =
                     ui.add(egui::Button::new(RichText::new(format!("{arrow}  BROWSER")).size(11.0).strong().color(t.text_dim)).frame(false));
                 crate::scenario::publish_handle("left-browser-toggle", response.rect.center());

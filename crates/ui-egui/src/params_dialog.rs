@@ -284,10 +284,9 @@ fn table(app: &mut SolveApp, ui: &mut egui::Ui, d: &mut ParamsDialog, rows: &[&R
                 // Up and down past the neighbouring user parameter (#1187), in the user table only:
                 // the favourites table lists favourites first whatever their order.
                 if salt == "user" {
-                    for (glyph, tip, neighbour, side) in [
-                        (crate::fonts::ARROW_UP, "Move up", i.checked_sub(1).and_then(|j| rows.get(j)), "before"),
-                        (crate::fonts::ARROW_DOWN, "Move down", rows.get(i + 1), "after"),
-                    ] {
+                    for (glyph, tip, neighbour, side) in
+                        [("▲", "Move up", i.checked_sub(1).and_then(|j| rows.get(j)), "before"), ("▼", "Move down", rows.get(i + 1), "after")]
+                    {
                         let button = egui::Button::new(RichText::new(glyph).small().color(t.text_dim)).frame_when_inactive(false);
                         let resp = ui.add_enabled(neighbour.is_some(), button).on_hover_text(crate::i18n::tr_label(tip));
                         crate::scenario::publish_handle(&format!("param:{}:{}", side, r.name), resp.rect.center());

@@ -144,8 +144,7 @@ pub(crate) fn complete(ui: &mut egui::Ui, resp: &egui::Response, text: &mut Stri
                         pick = Some(suggestion.text.clone());
                     }
                 }
-                let (up, down) = (crate::fonts::ARROW_UP, crate::fonts::ARROW_DOWN);
-                ui.label(RichText::new(format!("{up} {down} choose · Enter / Tab complete · Esc dismiss")).small().color(t.text_dim));
+                ui.label(RichText::new("↑ ↓ choose · Enter / Tab complete · Esc dismiss").small().color(t.text_dim));
             });
         },
     );
