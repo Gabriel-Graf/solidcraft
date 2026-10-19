@@ -177,7 +177,12 @@ fn clearance(s: &mut Session, p: &Value) -> Result<Value> {
     let boxes: Vec<Aabb3> = (0..n)
         .map(|i| match (solid.get(i), meshes.get(i).and_then(Option::as_ref)) {
             (Some(b), Some(m)) if flag(&used, i) => {
-                let (bx, chord) = (m.bounds(), b.display_tol());
+                // Over the triangles with finite corners, as a shape's set of them is.
+                let mut bx = Aabb3::EMPTY;
+                for p in m.triangles.iter().filter_map(|t| m.tri(t)).filter(|p| p.iter().all(|v| v.is_finite())) {
+                    p.into_iter().for_each(|v| bx.add(v));
+                }
+                let chord = b.display_tol();
                 let g = solidcraft_geom::Vec3::new(1.0, 1.0, 1.0) * if chord.is_finite() && chord > 0.0 { chord } else { 0.0 };
                 if bx.is_empty() { bx } else { Aabb3 { min: bx.min - g, max: bx.max + g } }
             }

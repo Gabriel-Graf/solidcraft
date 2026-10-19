@@ -50,7 +50,7 @@ pub struct ModelBody {
     /// [`Body::retained_bytes`] of `body`, measured when a feature made or changed it (0: not
     /// measured), so the evaluation cache's budget does not walk every body after every feature.
     bytes: usize,
-    /// In a world state: the `key` of the model body this one places (0: none).
+    /// In a world state: the [`ModelBody::geometry_key`] of the model body this one places (0: none).
     source_key: u64,
 }
 
@@ -5784,7 +5784,8 @@ pub fn world_state_reusing(doc: &Document, st: &ModelState, placed_before: &mut 
             };
             // World states keep their previous display-only evaluation-key semantics.
             placed.key = 0;
-            placed.source_key = b.key;
+            // With the model body's own frame, so its place is told apart from the placement's.
+            placed.source_key = b.geometry_key().unwrap_or(0);
             placed.source_name = Some(b.definition_name().to_string());
             placed.source_transform = crate::mat_mul(&bm, &b.source_transform);
             placed.component = comp;
@@ -5893,6 +5894,8 @@ mod world_placement_cache_tests {
         assert!(Arc::ptr_eq(&source.mesh, &first.mesh), "unchanged geometry must retain the shared display mesh cell");
         assert_eq!(first.key, 0);
         assert_eq!(placed.key, 0);
+        // Each placement has its own geometry identity, for work measured on it.
+        assert!(first.geometry_key().is_some() && first.geometry_key() != placed.geometry_key());
         assert!(!Arc::ptr_eq(&source.mesh, &placed.mesh), "a transformed mesh cannot be reused without mapping coordinates");
         assert_eq!(first.source_name.as_deref(), Some("Block"));
         assert_eq!(placed.source_name.as_deref(), Some("Block"));
