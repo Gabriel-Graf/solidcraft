@@ -356,18 +356,7 @@ fn edit_text(s: &mut Session, p: &Value) -> Result<Value> {
     // The numbers its expressions give now (a parameter may have changed since the sketch was
     // last stored); one that cannot be evaluated is left as it was, to be replaced by this edit.
     let _ = doc.apply_text_values(&doc.param_values().0, &mut sk);
-    let out = match p.get("edits") {
-        None | Some(Value::Null) => apply_text_edit(&mut sk, &doc, p)?,
-        Some(Value::Array(edits)) => {
-            if edits.is_empty() || edits.len() > MAX_TEXT_EDITS {
-                return Err(bad(cmd, format!("`edits` must hold 1 to {MAX_TEXT_EDITS} edits")));
-            }
-            // One command, so the features after the sketch are rebuilt once for all of them.
-            let outs = edits.iter().map(|e| apply_text_edit(&mut sk, &doc, e)).collect::<Result<Vec<_>>>()?;
-            json!({"edits": outs})
-        }
-        Some(_) => return Err(bad(cmd, "`edits` must be a list of edits")),
-    };
+    let out = apply_text_edits(&mut sk, &doc, p)?;
     *doc.sketch_mut(id)? = sk;
     *s.doc_mut() = doc;
     Ok(out)
@@ -378,8 +367,25 @@ fn edit_text(s: &mut Session, p: &Value) -> Result<Value> {
 fn edit_text_live(s: &mut Session, p: &Value) -> Result<(Value, Option<crate::LiveEdit>)> {
     let cmd = "sketch.edit_text";
     let id = s.active_sketch.ok_or_else(|| bad(cmd, "no sketch is being edited"))?;
-    let (out, report) = super::sketch::edit_solved(s, id, false, |sk, doc| Ok((apply_text_edit(sk, doc, p)?, super::sketch::Left::Unsolved)))?;
+    let (out, report) = super::sketch::edit_solved(s, id, false, |sk, doc| Ok((apply_text_edits(sk, doc, p)?, super::sketch::Left::Unsolved)))?;
     Ok((out, report.map(|report| crate::LiveEdit { sketch: id, report })))
+}
+
+/// `sketch.edit_text`'s change: one text's (`link` or `entity`), or each of `edits` in turn.
+/// One command, so the features after the sketch are rebuilt once for all of them.
+fn apply_text_edits(sk: &mut Sketch, doc: &solidcraft_doc::Document, p: &Value) -> Result<Value> {
+    let cmd = "sketch.edit_text";
+    match p.get("edits") {
+        None | Some(Value::Null) => apply_text_edit(sk, doc, p),
+        Some(Value::Array(edits)) => {
+            if edits.is_empty() || edits.len() > MAX_TEXT_EDITS {
+                return Err(bad(cmd, format!("`edits` must hold 1 to {MAX_TEXT_EDITS} edits")));
+            }
+            let outs = edits.iter().map(|e| apply_text_edit(sk, doc, e)).collect::<Result<Vec<_>>>()?;
+            Ok(json!({"edits": outs}))
+        }
+        Some(_) => Err(bad(cmd, "`edits` must be a list of edits")),
+    }
 }
 
 /// `sketch.edit_text`'s change to its sketch: the text source's new values and its outlines

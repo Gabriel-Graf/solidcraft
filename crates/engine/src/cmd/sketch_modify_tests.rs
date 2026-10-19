@@ -1605,6 +1605,11 @@ fn several_texts_edit_in_one_rebuild() {
     // All or nothing: a bad second edit leaves the first text as it was.
     assert!(s.execute("sketch.edit_text", &json!({"edits": [{"link": a, "text": "III"}, {"link": "nope", "text": "I"}]})).is_err());
     assert!(s.execute("sketch.edit_text", &json!({"edits": []})).is_err());
+    // A live frame takes the same list.
+    let r = run(&mut s, "sketch.edit_text", json!({"edits": [{"link": a, "height": 12}, {"link": b, "height": 12}], "live": true}));
+    assert_eq!(r["edits"][0]["link"], json!(a), "{r}");
+    run(&mut s, "sketch.edit_text", json!({"edits": [{"link": a, "height": 10}, {"link": b, "height": 10}], "live": true}));
+    run(&mut s, "sketch.drag_end", json!({}));
     run(&mut s, "sketch.finish", json!({}));
     let v1 = volume(&mut s);
     assert!((v1 / v0 - 2.0).abs() < 0.05, "two bars per label now: {v0} -> {v1}");
